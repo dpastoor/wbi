@@ -34,19 +34,11 @@ func ScanAndHandleQuartoVersions(osType config.OperatingSystem) error {
 	if quartoInstall {
 		// retrieve other versions and present them to the user
 		fmt.Printf("Retrieving available Quarto versions...")
-		var validQuartoVersions []string
-
-		for pagenum := 1; pagenum <= 5; pagenum++ {
-			pagedQuartionVerions, err := RetrieveValidQuartoVersions(pagenum)
-			if err != nil {
-				return fmt.Errorf("error retrieving valid Quarto versions: %w", err)
-			}
-			validQuartoVersions = append(validQuartoVersions, pagedQuartionVerions...)
-			if len(validQuartoVersions) > 10 {
-				pagenum = 5
-
-			}
+		validQuartoVersions, err := RetrieveValidQuartoVersions()
+		if err != nil {
+			return fmt.Errorf("error retrieving valid Quarto versions: %w", err)
 		}
+
 		if err != nil {
 			return fmt.Errorf("there was an issue retrieving valid Quarto versions: %w", err)
 		}

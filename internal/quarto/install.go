@@ -28,52 +28,51 @@ type Quarto []struct {
 	Prerelease bool   `json:"prerelease"`
 }
 
-func RetrieveValidQuartoVersions(pagenum int) ([]string, error) {
-	client := &http.Client{
-		Timeout: 30 * time.Second,
-	}
-	req, err := http.NewRequestWithContext(context.Background(),
-		http.MethodGet, "https://api.github.com/repos/quarto-dev/quarto-cli/releases?per_page=100&page="+strconv.Itoa(pagenum), nil)
-	if err != nil {
-		return nil, errors.New("error creating request")
-	}
-	res, err := client.Do(req)
-	if err != nil {
-		return nil, errors.New("error retrieving JSON data")
-	}
-	defer func(Body io.ReadCloser) {
-		_ = Body.Close()
-	}(res.Body)
-	if res.StatusCode != http.StatusOK {
-		return nil, errors.New("error retrieving JSON data")
-	}
-	var quarto Quarto
-	err = json.NewDecoder(res.Body).Decode(&quarto)
-	if err != nil {
-		return nil, err
-	}
-	var releases []string
-	for _, release := range quarto {
-		if release.Prerelease == false {
-			releases = append(releases, release.Name)
+func RetrieveValidQuartoVersions() ([]string, error) {
+	var availQuartoVersions []string
+
+	for pagenum := 1; pagenum < 5; pagenum++ {
+
+		client := &http.Client{
+			Timeout: 30 * time.Second,
+		}
+		req, err := http.NewRequestWithContext(context.Background(),
+			http.MethodGet, "https://api.github.com/repos/quarto-dev/quarto-cli/releases?per_page=100&page="+strconv.Itoa(pagenum), nil)
+		if err != nil {
+			return nil, errors.New("error creating request")
+		}
+		res, err := client.Do(req)
+		if err != nil {
+			return nil, errors.New("error retrieving JSON data")
+		}
+		defer func(Body io.ReadCloser) {
+			_ = Body.Close()
+		}(res.Body)
+		if res.StatusCode != http.StatusOK {
+			return nil, errors.New("error retrieving JSON data")
+		}
+		var quarto Quarto
+		err = json.NewDecoder(res.Body).Decode(&quarto)
+		if err != nil {
+			return nil, err
+		}
+		for _, release := range quarto {
+			if release.Prerelease == false {
+				availQuartoVersions = append(availQuartoVersions, release.Name)
+			}
+		}
+		if len(availQuartoVersions) > 10 {
+			break
 		}
 	}
-	return releases, nil
+	return availQuartoVersions, nil
 }
 
 func ValidateQuartoVersions(quartoVersions []string) error {
-	var availQuartoVersions []string
 
-	for pagenum := 1; pagenum <= 5; pagenum++ {
-		pagedQuartionVerions, err := RetrieveValidQuartoVersions(pagenum)
-		if err != nil {
-			return fmt.Errorf("error retrieving valid Quarto versions: %w", err)
-		}
-		availQuartoVersions = append(availQuartoVersions, pagedQuartionVerions...)
-		if len(availQuartoVersions) > 10 {
-			pagenum = 5
-
-		}
+	availQuartoVersions, err := RetrieveValidQuartoVersions()
+	if err != nil {
+		return fmt.Errorf("error retrieving valid Quarto versions: %w", err)
 	}
 
 	for _, quartoVersion := range quartoVersions {
