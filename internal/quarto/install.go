@@ -2,11 +2,13 @@ package quarto
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/AlecAivazis/survey/v2"
@@ -17,16 +19,63 @@ import (
 	"github.com/sol-eng/wbi/internal/system"
 )
 
-func RetrieveValidQuartoVersions() ([]string, error) {
-	// TODO automate the retrieving the list of valid versions
-	return []string{"1.3.340", "1.2.475", "1.1.189", "1.0.38"}, nil
+type Assets []struct {
+	BrowserDownloadURL string `json:"browser_download_url"`
+}
+type Quarto []struct {
+	Assets     Assets `json:"assets"`
+	Name       string `json:"name"`
+	Prerelease bool   `json:"prerelease"`
+}
+
+func RetrieveValidQuartoVersions(pagenum int) ([]string, error) {
+	client := &http.Client{
+		Timeout: 30 * time.Second,
+	}
+	req, err := http.NewRequestWithContext(context.Background(),
+		http.MethodGet, "https://api.github.com/repos/quarto-dev/quarto-cli/releases?per_page=100&page="+strconv.Itoa(pagenum), nil)
+	if err != nil {
+		return nil, errors.New("error creating request")
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		return nil, errors.New("error retrieving JSON data")
+	}
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(res.Body)
+	if res.StatusCode != http.StatusOK {
+		return nil, errors.New("error retrieving JSON data")
+	}
+	var quarto Quarto
+	err = json.NewDecoder(res.Body).Decode(&quarto)
+	if err != nil {
+		return nil, err
+	}
+	var releases []string
+	for _, release := range quarto {
+		if release.Prerelease == false {
+			releases = append(releases, release.Name)
+		}
+	}
+	return releases, nil
 }
 
 func ValidateQuartoVersions(quartoVersions []string) error {
-	availQuartoVersions, err := RetrieveValidQuartoVersions()
-	if err != nil {
-		return fmt.Errorf("error retrieving valid Quarto versions: %w", err)
+	var availQuartoVersions []string
+
+	for pagenum := 1; pagenum <= 5; pagenum++ {
+		pagedQuartionVerions, err := RetrieveValidQuartoVersions(pagenum)
+		if err != nil {
+			return fmt.Errorf("error retrieving valid Quarto versions: %w", err)
+		}
+		availQuartoVersions = append(availQuartoVersions, pagedQuartionVerions...)
+		if len(availQuartoVersions) > 10 {
+			pagenum = 5
+
+		}
 	}
+
 	for _, quartoVersion := range quartoVersions {
 		if !lo.Contains(availQuartoVersions, quartoVersion) {
 			return errors.New("version " + quartoVersion + " is not a valid Quarto version")
