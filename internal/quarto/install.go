@@ -12,6 +12,7 @@ import (
 	"os"
 	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -138,9 +139,9 @@ func generateQuartoInstallURL(quartoVersion string, osType config.OperatingSyste
 	// treat RHEL 7 differently as specified here: https://docs.posit.co/resources/install-quarto/#specify-quarto-version-tar
 	var url string
 	if osType == config.Redhat7 {
-		url = fmt.Sprintf("https://github.com/quarto-dev/quarto-cli/releases/download/v%s/quarto-%s-linux-rhel7-amd64.tar.gz", quartoVersion, quartoVersion)
+		url = fmt.Sprintf("https://github.com/quarto-dev/quarto-cli/releases/download/%s/quarto-%s-linux-rhel7-amd64.tar.gz", quartoVersion, strings.Replace(quartoVersion, "v", "", -1))
 	} else {
-		url = fmt.Sprintf("https://github.com/quarto-dev/quarto-cli/releases/download/v%s/quarto-%s-linux-amd64.tar.gz", quartoVersion, quartoVersion)
+		url = fmt.Sprintf("https://github.com/quarto-dev/quarto-cli/releases/download/%s/quarto-%s-linux-amd64.tar.gz", quartoVersion, strings.Replace(quartoVersion, "v", "", -1))
 	}
 	return url
 }
