@@ -5,14 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/samber/lo"
 	"io"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
+	"sync"
 	"time"
 
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"github.com/sol-eng/wbi/internal/config"
 	cmdlog "github.com/sol-eng/wbi/internal/logging"
@@ -28,31 +30,56 @@ type Quarto []struct {
 	Prerelease bool   `json:"prerelease"`
 }
 
+type result struct {
+	index int
+	res   http.Response
+	err   error
+}
+
 func RetrieveValidQuartoVersions() ([]string, error) {
 	var availQuartoVersions []string
-
+	var results []result
+	var quarto Quarto
+	var urls []string
 	for pagenum := 1; pagenum < 5; pagenum++ {
+		urls = append(urls, "https://api.github.com/repos/quarto-dev/quarto-cli/releases?per_page=100&page="+strconv.Itoa(pagenum))
+	}
+	fmt.Println("Appended URLs")
+	wg := sync.WaitGroup{}
 
-		client := &http.Client{
-			Timeout: 30 * time.Second,
-		}
-		req, err := http.NewRequestWithContext(context.Background(),
-			http.MethodGet, "https://api.github.com/repos/quarto-dev/quarto-cli/releases?per_page=100&page="+strconv.Itoa(pagenum), nil)
-		if err != nil {
-			return nil, errors.New("error creating request")
-		}
-		res, err := client.Do(req)
-		if err != nil {
-			return nil, errors.New("error retrieving JSON data")
-		}
-		defer func(Body io.ReadCloser) {
-			_ = Body.Close()
-		}(res.Body)
-		if res.StatusCode != http.StatusOK {
-			return nil, errors.New("error retrieving JSON data")
-		}
-		var quarto Quarto
-		err = json.NewDecoder(res.Body).Decode(&quarto)
+	for i, url := range urls {
+		fmt.Println("url loop" + strconv.Itoa(i))
+		wg.Add(1)
+		// start a go routine with the index and url in a closure
+		go func(i int, url string) {
+			fmt.Println("Start go func" + strconv.Itoa(i))
+
+			// send the request and put the response in a result struct
+			// along with the index so we can sort them later along with
+			// any error that might have occurred
+			res, err := http.Get(url)
+			if err != nil {
+				return
+			}
+			result := &result{i, *res, err}
+			results = append(results, *result)
+			fmt.Println("End go func " + strconv.Itoa(i))
+			wg.Done()
+
+		}(i, url)
+
+	}
+
+	wg.Wait()
+
+	// let's sort these results real quick
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].index < results[j].index
+	})
+
+	for _, result := range results {
+
+		err := json.NewDecoder(result.res.Body).Decode(&quarto)
 		if err != nil {
 			return nil, err
 		}
@@ -60,9 +87,6 @@ func RetrieveValidQuartoVersions() ([]string, error) {
 			if release.Prerelease == false {
 				availQuartoVersions = append(availQuartoVersions, release.Name)
 			}
-		}
-		if len(availQuartoVersions) > 10 {
-			break
 		}
 	}
 	return availQuartoVersions, nil
