@@ -41,18 +41,16 @@ func RetrieveValidQuartoVersions() ([]string, error) {
 	var results []result
 	var quarto Quarto
 	var urls []string
+
 	for pagenum := 1; pagenum < 5; pagenum++ {
 		urls = append(urls, "https://api.github.com/repos/quarto-dev/quarto-cli/releases?per_page=100&page="+strconv.Itoa(pagenum))
 	}
-	fmt.Println("Appended URLs")
 	wg := sync.WaitGroup{}
 
 	for i, url := range urls {
-		fmt.Println("url loop" + strconv.Itoa(i))
 		wg.Add(1)
 		// start a go routine with the index and url in a closure
 		go func(i int, url string) {
-			fmt.Println("Start go func" + strconv.Itoa(i))
 
 			// send the request and put the response in a result struct
 			// along with the index so we can sort them later along with
@@ -63,7 +61,6 @@ func RetrieveValidQuartoVersions() ([]string, error) {
 			}
 			result := &result{i, *res, err}
 			results = append(results, *result)
-			fmt.Println("End go func " + strconv.Itoa(i))
 			wg.Done()
 
 		}(i, url)
