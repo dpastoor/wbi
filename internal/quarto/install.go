@@ -37,6 +37,8 @@ func RetrieveValidQuartoVersions() ([]string, error) {
 		}
 		req, err := http.NewRequestWithContext(context.Background(),
 			http.MethodGet, "https://api.github.com/repos/quarto-dev/quarto-cli/releases?per_page=100&page="+strconv.Itoa(pagenum), nil)
+		req.Header.Set("Authorization", "Bearer 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")
+
 		if err != nil {
 			return nil, errors.New("error creating request")
 		}
