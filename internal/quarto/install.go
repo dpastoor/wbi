@@ -49,12 +49,9 @@ func RetrieveValidQuartoVersions() ([]string, error) {
 
 	for i, url := range urls {
 		wg.Add(1)
-		// start a go routine with the index and url in a closure
+
 		go func(i int, url string) {
 
-			// send the request and put the response in a result struct
-			// along with the index so we can sort them later along with
-			// any error that might have occurred
 			res, err := http.Get(url)
 			if err != nil {
 				return
@@ -118,12 +115,13 @@ func DownloadAndInstallQuarto(quartoVersion string, osType config.OperatingSyste
 	// Find URL
 	quartoURL := generateQuartoInstallURL(quartoVersion, osType)
 	// Download installer
-	installerPath, err := downloadFileQuarto(quartoURL, quartoVersion, osType)
+	installerPath, err := downloadFileQuarto(quartoURL, quartoVersion)
 	if err != nil {
 		return fmt.Errorf("DownloadFileQuarto: %w", err)
 	}
 	// Install Quarto
 	err = installQuarto(installerPath, osType, quartoVersion, true)
+
 	if err != nil {
 		return fmt.Errorf("InstallQuarto: %w", err)
 	}
@@ -147,7 +145,7 @@ func generateQuartoInstallURL(quartoVersion string, osType config.OperatingSyste
 	return url
 }
 
-func downloadFileQuarto(url string, version string, osType config.OperatingSystem) (string, error) {
+func downloadFileQuarto(url string, version string) (string, error) {
 	system.PrintAndLogInfo("Downloading Quarto Version: " + version + " installer from: " + url)
 
 	// Create the file
@@ -156,7 +154,16 @@ func downloadFileQuarto(url string, version string, osType config.OperatingSyste
 	if err != nil {
 		return tmpFile.Name(), err
 	}
-	defer tmpFile.Close()
+
+	defer func() {
+		if tempErr := tmpFile.Close(); tempErr != nil {
+			err = tempErr
+		}
+	}()
+
+	if err != nil {
+		return tmpFile.Name(), err
+	}
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,
@@ -170,7 +177,12 @@ func downloadFileQuarto(url string, version string, osType config.OperatingSyste
 	if err != nil {
 		return "", errors.New("error downloading " + filename + " installer")
 	}
-	defer res.Body.Close()
+	defer func() {
+		if tempErr := res.Body.Close(); tempErr != nil {
+			err = tempErr
+		}
+	}()
+
 	if res.StatusCode != http.StatusOK {
 		return "", errors.New("error retrieving " + filename + " installer")
 	}
@@ -186,6 +198,7 @@ func downloadFileQuarto(url string, version string, osType config.OperatingSyste
 
 // Installs Quarto
 func installQuarto(filepath string, osType config.OperatingSystem, version string, save bool) error {
+
 	// create the /opt/quarto directory if it doesn't exist
 	path := fmt.Sprintf("/opt/quarto/%s", version)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -249,7 +262,7 @@ func quartoLocationSymlinksPrompt(quartoPaths []string) (string, error) {
 	}
 	err := survey.AskOne(prompt, &target)
 	if err != nil {
-		return "", errors.New("there was an issue with the Quarto selection prompt for symlinking")
+		return "", errors.New("there was an issue with the Quarto selection prompt for symlink")
 	}
 	if target == "" {
 		return target, errors.New("no Quarto binary selected to be symlinked")
