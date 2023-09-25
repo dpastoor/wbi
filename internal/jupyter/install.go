@@ -24,7 +24,7 @@ func InstallJupyter(pythonPath string) error {
 
 // Install various Jupyter related packages from PyPI
 func InstallJupyterAndComponents(pythonPath string) error {
-	licenseCommand := "PIP_ROOT_USER_ACTION=ignore " + pythonPath + " -m pip install --no-warn-script-location --disable-pip-version-check jupyterlab==3.6.5 rsp_jupyter rsconnect_jupyter workbench_jupyterlab==1.1.1"
+	licenseCommand := "PIP_ROOT_USER_ACTION=ignore " + pythonPath + " -m pip install --no-warn-script-location --disable-pip-version-check jupyter jupyterlab==3.6.5 rsp_jupyter rsconnect_jupyter workbench_jupyterlab==1.1.1"
 	err := system.RunCommand(licenseCommand, true, 2, true)
 	if err != nil {
 		return fmt.Errorf("issue installing Jupyter with the command '%s': %w", licenseCommand, err)
