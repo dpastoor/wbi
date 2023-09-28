@@ -23,11 +23,31 @@ func InstallPrereqs(osType config.OperatingSystem) error {
 		if GdebiCoreErr != nil {
 			return fmt.Errorf("InstallGdebiCore: %w", GdebiCoreErr)
 		}
-	} else if osType == config.Redhat9 || osType == config.Redhat8 || osType == config.Redhat7 {
+	} else if osType == config.Redhat9 || osType == config.Redhat8 {
 		// Enable the Extra Packages for Enterprise Linux (EPEL) repository
 		EnableEPELErr := EnableEPELRepo(osType)
 		if EnableEPELErr != nil {
 			return fmt.Errorf("EnableEPELRepo: %w", EnableEPELErr)
+		}
+		// Enable the CodeReady Linux Builder repository
+		OnCloud, err := PromptCloud()
+		if err != nil {
+			return fmt.Errorf("PrompOnPremCloud: %w", err)
+		}
+		EnableCodeReadyErr := EnableCodeReadyRepo(osType, OnCloud)
+		if EnableCodeReadyErr != nil {
+			return fmt.Errorf("EnableCodeReadyRepo: %w", EnableCodeReadyErr)
+		}
+	} else if osType == config.Redhat7 {
+		// Enable the Extra Packages for Enterprise Linux (EPEL) repository
+		EnableEPELErr := EnableEPELRepo(osType)
+		if EnableEPELErr != nil {
+			return fmt.Errorf("EnableEPELRepo: %w", EnableEPELErr)
+		}
+		// Enable the Extras Repo
+		err := EnableExtraRepo()
+		if err != nil {
+			return fmt.Errorf("EnableExtraRepo: %w", err)
 		}
 		// Enable the CodeReady Linux Builder repository
 		OnCloud, err := PromptCloud()
@@ -134,6 +154,18 @@ func EnableCodeReadyRepo(osType config.OperatingSystem, CloudInstall bool) error
 		return fmt.Errorf("issue enabling codeready repo: CloudInstall boolean undefined")
 	}
 	system.PrintAndLogInfo("\nThe CodeReady Linux Builder repository has been successfully enabled!")
+	return nil
+}
+
+// Enable the Extra Repo
+func EnableExtraRepo() error {
+	extraCommand := "yum-config-manager --enable rhel-7-server-rhui-extras-rpms"
+	commandOutput, err := system.RunCommandAndCaptureOutput(extraCommand, true, 1, true)
+	if err != nil {
+		return fmt.Errorf("issue enabling extra repo with the command '%s': %w", commandOutput, err)
+	}
+
+	system.PrintAndLogInfo("\nThe Extra Repository has been successfully enabled!")
 	return nil
 }
 
