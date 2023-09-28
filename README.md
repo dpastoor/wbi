@@ -8,7 +8,7 @@ wbi is a CLI tool aimed at streamlining the installation and configuration of Po
 
 ### Apt Install
 
-To install wbi on Ubuntu 18.04, 20.04 or 22.04 using apt install:
+To install wbi on Ubuntu 22.04 or 20.04 using apt install:
 ```
 echo "deb [trusted=yes] https://apt.fury.io/wbi/ /" | sudo tee -a /etc/apt/sources.list.d/fury.list && sudo apt update && sudo apt install wbi
 
@@ -17,7 +17,7 @@ sudo wbi setup
 
 ### Yum Install
 
-To install wbi on RHEL 7/CentOS 7, RHEL 8 or RHEL 9 using yum install:
+To install wbi on RHEL 7/CentOS 7, RHEL 8/CentOS 8 or RHEL 9/CentOS 9 using yum install:
 ```
 sudo tee -a /etc/yum.repos.d/fury.repo > /dev/null <<EOT
 [fury]
@@ -42,12 +42,11 @@ Visit the [release page](https://github.com/sol-eng/wbi/releases) to find instal
 - Internet access (online installation)
 
 ## Supported Operating Systems
-- RHEL 9
-- RHEL 8
+- RHEL 9/CentOS 9
+- RHEL 8/CentOS 8
 - RHEL 7/CentOS 7
 - Ubuntu 22.04
 - Ubuntu 20.04
-- Ubuntu 18.04
 
 ## Usage
 
