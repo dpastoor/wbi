@@ -107,7 +107,7 @@ func InstallWorkbench(filepath string, osType config.OperatingSystem) error {
 // Creates the proper command to install Workbench based on the operating system
 func RetrieveInstallCommandForWorkbench(filepath string, osType config.OperatingSystem) (string, error) {
 	switch osType {
-	case config.Ubuntu22, config.Ubuntu20, config.Ubuntu18:
+	case config.Ubuntu22, config.Ubuntu20:
 		return "DEBIAN_FRONTEND=noninteractive gdebi -n " + filepath, nil
 	case config.Redhat7, config.Redhat8, config.Redhat9:
 		return "yum install -y " + filepath, nil
@@ -119,7 +119,7 @@ func RetrieveInstallCommandForWorkbench(filepath string, osType config.Operating
 // Pulls out the installer information from the JSON data based on the operating system
 func (r *RStudio) GetInstallerInfo(osType config.OperatingSystem) (InstallerInfo, error) {
 	switch osType {
-	case config.Ubuntu18, config.Ubuntu20:
+	case config.Ubuntu20:
 		return r.Rstudio.Pro.Stable.Server.Installer.Focal, nil
 	case config.Ubuntu22:
 		return r.Rstudio.Pro.Stable.Server.Installer.Jammy, nil

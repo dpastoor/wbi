@@ -16,12 +16,6 @@ type InstallerInfo struct {
 
 func PopulateInstallerInfo(language string, version string, osType config.OperatingSystem) (InstallerInfo, error) {
 	switch osType {
-	case config.Ubuntu18:
-		return InstallerInfo{
-			Name:    language + "-" + version + "_1_amd64.deb",
-			URL:     "https://cdn.rstudio.com/" + language + "/ubuntu-1804/pkgs/" + language + "-" + version + "_1_amd64.deb",
-			Version: version,
-		}, nil
 	case config.Ubuntu20:
 		return InstallerInfo{
 			Name:    language + "-" + version + "_1_amd64.deb",

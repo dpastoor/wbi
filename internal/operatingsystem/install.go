@@ -13,7 +13,7 @@ import (
 func InstallPrereqs(osType config.OperatingSystem) error {
 	system.PrintAndLogInfo("Installing prerequisites...")
 	// Update apt and install gdebi-core if an Ubuntu system
-	if osType == config.Ubuntu22 || osType == config.Ubuntu20 || osType == config.Ubuntu18 {
+	if osType == config.Ubuntu22 || osType == config.Ubuntu20 {
 		AptErr := UpgradeApt()
 		if AptErr != nil {
 			return fmt.Errorf("UpgradeApt: %w", AptErr)
@@ -207,7 +207,7 @@ func DisableFirewall(osType config.OperatingSystem) error {
 	var FWCommand string
 
 	switch osType {
-	case config.Ubuntu18, config.Ubuntu20, config.Ubuntu22:
+	case config.Ubuntu20, config.Ubuntu22:
 		FWCommand = "ufw disable"
 	case config.Redhat7, config.Redhat8, config.Redhat9:
 		FWCommand = "systemctl stop firewalld && systemctl disable firewalld"

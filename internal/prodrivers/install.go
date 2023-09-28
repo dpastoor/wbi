@@ -107,7 +107,7 @@ func InstallProDrivers(filepath string, osType config.OperatingSystem) error {
 func (pd *ProDrivers) GetInstallerInfo(osType config.OperatingSystem) (InstallerInfo, error) {
 	switch osType {
 	// Posit Pro Drivers are the same for all Ubuntu versions
-	case config.Ubuntu18, config.Ubuntu20, config.Ubuntu22:
+	case config.Ubuntu20, config.Ubuntu22:
 		return pd.ProDrivers.Installer.Focal, nil
 	case config.Redhat7:
 		return pd.ProDrivers.Installer.Redhat7, nil
@@ -147,7 +147,7 @@ func RetrieveProDriversInstallerInfo() (ProDrivers, error) {
 
 // Installs unixODBC and unixODBC-devel
 func InstallUnixODBC(osType config.OperatingSystem) error {
-	if osType == config.Ubuntu22 || osType == config.Ubuntu20 || osType == config.Ubuntu18 {
+	if osType == config.Ubuntu22 || osType == config.Ubuntu20 {
 		prereqCommand := "apt-get -y install unixodbc unixodbc-dev"
 		err := system.RunCommand(prereqCommand, true, 1, true)
 		if err != nil {

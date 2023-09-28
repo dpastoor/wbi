@@ -4,7 +4,6 @@ type OperatingSystem int
 
 const (
 	Unknown OperatingSystem = iota
-	Ubuntu18
 	Ubuntu20
 	Ubuntu22
 	Redhat7
@@ -14,8 +13,6 @@ const (
 
 func (os OperatingSystem) ToString() string {
 	switch os {
-	case Ubuntu18:
-		return "Ubuntu 18"
 	case Ubuntu20:
 		return "Ubuntu 20"
 	case Ubuntu22:

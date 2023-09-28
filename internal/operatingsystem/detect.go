@@ -38,8 +38,6 @@ func DetectOS() (config.OperatingSystem, error) {
 				return config.Ubuntu22, nil
 			} else if strings.Contains(string(releaseVersionUbuntu), "Ubuntu 20") {
 				return config.Ubuntu20, nil
-			} else if strings.Contains(string(releaseVersionUbuntu), "Ubuntu 18") {
-				return config.Ubuntu18, nil
 			} else {
 				return config.Unknown, errors.New("unsupported operating system")
 			}

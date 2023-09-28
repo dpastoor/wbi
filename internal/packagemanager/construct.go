@@ -36,8 +36,6 @@ func BuildPublicPackageManagerFullURL(osType config.OperatingSystem) (string, er
 func ConvertOSTypeToOSName(osType config.OperatingSystem) (string, error) {
 	var osName string
 	switch osType {
-	case config.Ubuntu18:
-		osName = "bionic"
 	case config.Ubuntu20:
 		osName = "focal"
 	case config.Ubuntu22:

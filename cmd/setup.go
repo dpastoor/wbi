@@ -296,7 +296,7 @@ func newSetup(setupOpts setupOpts) error {
 
 	var adDocURL string
 	switch osType {
-	case config.Ubuntu18, config.Ubuntu20, config.Ubuntu22:
+	case config.Ubuntu20, config.Ubuntu22:
 		adDocURL = "https://support.posit.co/hc/en-us/articles/360024137174-Integrating-Ubuntu-with-Active-Directory-for-RStudio-Workbench-RStudio-Server-Pro"
 	case config.Redhat7, config.Redhat8, config.Redhat9:
 		adDocURL = "https://support.posit.co/hc/en-us/articles/360016587973-Integrating-RStudio-Workbench-RStudio-Server-Pro-with-Active-Directory-using-CentOS-RHEL"
