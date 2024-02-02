@@ -502,10 +502,11 @@ func unavailablePythonVersionsByOS(osType config.OperatingSystem) unavailablePyt
 	switch osType {
 	case config.Redhat7:
 		pythonVersions.NewestPythonVersions = []string{"3.10.0", "3.11.0", "3.8.16", "3.9.15"}
-		return pythonVersions
 	case config.Redhat9:
 		pythonVersions.SpecificPythonVersions = []string{"3.7.3", "3.7.4", "3.7.5"}
-		return pythonVersions
 	}
+	// global
+	pythonVersions.NewestPythonVersions = []string{"3.12.0"}
+
 	return pythonVersions
 }
