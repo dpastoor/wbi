@@ -23,8 +23,6 @@ func main() {
 func OSSwitch(osGo string) config.OperatingSystem {
 	var osType config.OperatingSystem
 	switch osGo {
-	case "U18":
-		osType = config.Ubuntu18
 	case "U20":
 		osType = config.Ubuntu20
 	case "U22":
