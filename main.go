@@ -2,11 +2,13 @@ package main
 
 import (
 	"C"
+	"github.com/sol-eng/wbi/cmd"
 	"github.com/sol-eng/wbi/internal/config"
 	"github.com/sol-eng/wbi/internal/languages"
 	"github.com/sol-eng/wbi/internal/prodrivers"
 	"github.com/sol-eng/wbi/internal/quarto"
 	"github.com/sol-eng/wbi/internal/workbench"
+	"os"
 	"strings"
 )
 
@@ -18,6 +20,7 @@ var (
 )
 
 func main() {
+	cmd.Execute(version, os.Args[1:])
 }
 
 func OSSwitch(osGo string) config.OperatingSystem {
