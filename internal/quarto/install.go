@@ -114,7 +114,7 @@ func DownloadAndInstallQuartoVersions(quartoVersions []string, osType config.Ope
 
 func DownloadAndInstallQuarto(quartoVersion string, osType config.OperatingSystem) error {
 	// Find URL
-	quartoURL := generateQuartoInstallURL(quartoVersion, osType)
+	quartoURL := GenerateQuartoInstallURL(quartoVersion, osType)
 	// Download installer
 	installerPath, err := downloadFileQuarto(quartoURL, quartoVersion)
 	if err != nil {
@@ -135,7 +135,7 @@ func DownloadAndInstallQuarto(quartoVersion string, osType config.OperatingSyste
 	return nil
 }
 
-func generateQuartoInstallURL(quartoVersion string, osType config.OperatingSystem) string {
+func GenerateQuartoInstallURL(quartoVersion string, osType config.OperatingSystem) string {
 	// treat RHEL 7 differently as specified here: https://docs.posit.co/resources/install-quarto/#specify-quarto-version-tar
 	var url string
 	if osType == config.Redhat7 {
