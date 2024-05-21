@@ -15,3 +15,4 @@ dist/
 dist/
 *.log
 *.sh
+*.py

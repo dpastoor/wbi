@@ -2,31 +2,98 @@ package quarto
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/AlecAivazis/survey/v2"
+	"github.com/samber/lo"
 	"io"
 	"net/http"
 	"os"
+	"sort"
+	"strconv"
+	"strings"
+	"sync"
 	"time"
 
-	"github.com/AlecAivazis/survey/v2"
-	"github.com/samber/lo"
 	log "github.com/sirupsen/logrus"
 	"github.com/sol-eng/wbi/internal/config"
 	cmdlog "github.com/sol-eng/wbi/internal/logging"
 	"github.com/sol-eng/wbi/internal/system"
 )
 
+type Assets []struct {
+	BrowserDownloadURL string `json:"browser_download_url"`
+}
+type Quarto []struct {
+	Assets     Assets `json:"assets"`
+	Name       string `json:"name"`
+	Prerelease bool   `json:"prerelease"`
+}
+
+type result struct {
+	index int
+	res   http.Response
+	err   error
+}
+
 func RetrieveValidQuartoVersions() ([]string, error) {
-	// TODO automate the retrieving the list of valid versions
-	return []string{"1.3.340", "1.2.475", "1.1.189", "1.0.38"}, nil
+	var availQuartoVersions []string
+	var results []result
+	var quarto Quarto
+	var urls []string
+
+	for pagenum := 1; pagenum < 5; pagenum++ {
+		urls = append(urls, "https://api.github.com/repos/quarto-dev/quarto-cli/releases?per_page=100&page="+strconv.Itoa(pagenum))
+	}
+	wg := sync.WaitGroup{}
+
+	for i, url := range urls {
+		wg.Add(1)
+
+		go func(i int, url string) {
+
+			res, err := http.Get(url)
+			if err != nil {
+				return
+			}
+			result := &result{i, *res, err}
+			results = append(results, *result)
+			wg.Done()
+
+		}(i, url)
+
+	}
+
+	wg.Wait()
+
+	// let's sort these results real quick
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].index < results[j].index
+	})
+
+	for _, result := range results {
+
+		err := json.NewDecoder(result.res.Body).Decode(&quarto)
+		if err != nil {
+			return nil, err
+		}
+		for _, release := range quarto {
+			if release.Prerelease == false {
+				availQuartoVersions = append(availQuartoVersions, release.Name)
+			}
+		}
+	}
+	return availQuartoVersions, nil
 }
 
 func ValidateQuartoVersions(quartoVersions []string) error {
+
 	availQuartoVersions, err := RetrieveValidQuartoVersions()
 	if err != nil {
 		return fmt.Errorf("error retrieving valid Quarto versions: %w", err)
 	}
+
 	for _, quartoVersion := range quartoVersions {
 		if !lo.Contains(availQuartoVersions, quartoVersion) {
 			return errors.New("version " + quartoVersion + " is not a valid Quarto version")
@@ -49,12 +116,13 @@ func DownloadAndInstallQuarto(quartoVersion string, osType config.OperatingSyste
 	// Find URL
 	quartoURL := generateQuartoInstallURL(quartoVersion, osType)
 	// Download installer
-	installerPath, err := downloadFileQuarto(quartoURL, quartoVersion, osType)
+	installerPath, err := downloadFileQuarto(quartoURL, quartoVersion)
 	if err != nil {
 		return fmt.Errorf("DownloadFileQuarto: %w", err)
 	}
 	// Install Quarto
 	err = installQuarto(installerPath, osType, quartoVersion, true)
+
 	if err != nil {
 		return fmt.Errorf("InstallQuarto: %w", err)
 	}
@@ -71,14 +139,14 @@ func generateQuartoInstallURL(quartoVersion string, osType config.OperatingSyste
 	// treat RHEL 7 differently as specified here: https://docs.posit.co/resources/install-quarto/#specify-quarto-version-tar
 	var url string
 	if osType == config.Redhat7 {
-		url = fmt.Sprintf("https://github.com/quarto-dev/quarto-cli/releases/download/v%s/quarto-%s-linux-rhel7-amd64.tar.gz", quartoVersion, quartoVersion)
+		url = fmt.Sprintf("https://github.com/quarto-dev/quarto-cli/releases/download/%s/quarto-%s-linux-rhel7-amd64.tar.gz", quartoVersion, strings.Replace(quartoVersion, "v", "", -1))
 	} else {
-		url = fmt.Sprintf("https://github.com/quarto-dev/quarto-cli/releases/download/v%s/quarto-%s-linux-amd64.tar.gz", quartoVersion, quartoVersion)
+		url = fmt.Sprintf("https://github.com/quarto-dev/quarto-cli/releases/download/%s/quarto-%s-linux-amd64.tar.gz", quartoVersion, strings.Replace(quartoVersion, "v", "", -1))
 	}
 	return url
 }
 
-func downloadFileQuarto(url string, version string, osType config.OperatingSystem) (string, error) {
+func downloadFileQuarto(url string, version string) (string, error) {
 	system.PrintAndLogInfo("Downloading Quarto Version: " + version + " installer from: " + url)
 
 	// Create the file
@@ -87,7 +155,16 @@ func downloadFileQuarto(url string, version string, osType config.OperatingSyste
 	if err != nil {
 		return tmpFile.Name(), err
 	}
-	defer tmpFile.Close()
+
+	defer func() {
+		if tempErr := tmpFile.Close(); tempErr != nil {
+			err = tempErr
+		}
+	}()
+
+	if err != nil {
+		return tmpFile.Name(), err
+	}
 
 	client := &http.Client{
 		Timeout: 30 * time.Second,
@@ -101,7 +178,12 @@ func downloadFileQuarto(url string, version string, osType config.OperatingSyste
 	if err != nil {
 		return "", errors.New("error downloading " + filename + " installer")
 	}
-	defer res.Body.Close()
+	defer func() {
+		if tempErr := res.Body.Close(); tempErr != nil {
+			err = tempErr
+		}
+	}()
+
 	if res.StatusCode != http.StatusOK {
 		return "", errors.New("error retrieving " + filename + " installer")
 	}
@@ -117,6 +199,7 @@ func downloadFileQuarto(url string, version string, osType config.OperatingSyste
 
 // Installs Quarto
 func installQuarto(filepath string, osType config.OperatingSystem, version string, save bool) error {
+
 	// create the /opt/quarto directory if it doesn't exist
 	path := fmt.Sprintf("/opt/quarto/%s", version)
 	if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -180,7 +263,7 @@ func quartoLocationSymlinksPrompt(quartoPaths []string) (string, error) {
 	}
 	err := survey.AskOne(prompt, &target)
 	if err != nil {
-		return "", errors.New("there was an issue with the Quarto selection prompt for symlinking")
+		return "", errors.New("there was an issue with the Quarto selection prompt for symlink")
 	}
 	if target == "" {
 		return target, errors.New("no Quarto binary selected to be symlinked")

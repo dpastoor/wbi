@@ -26,7 +26,12 @@ func TestInstallParamsValidate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to retrieve valid Python versions: %v", err)
 	}
+
 	validQuartoVersions, err := quarto.RetrieveValidQuartoVersions()
+	if err != nil {
+		t.Fatalf("error retrieving valid Quarto versions: %v", err)
+	}
+
 	if err != nil {
 		t.Fatalf("failed to retrieve valid Quarto versions: %v", err)
 	}

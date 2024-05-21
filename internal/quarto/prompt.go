@@ -33,7 +33,12 @@ func ScanAndHandleQuartoVersions(osType config.OperatingSystem) error {
 
 	if quartoInstall {
 		// retrieve other versions and present them to the user
+		fmt.Printf("Retrieving available Quarto versions...")
 		validQuartoVersions, err := RetrieveValidQuartoVersions()
+		if err != nil {
+			return fmt.Errorf("error retrieving valid Quarto versions: %w", err)
+		}
+
 		if err != nil {
 			return fmt.Errorf("there was an issue retrieving valid Quarto versions: %w", err)
 		}
