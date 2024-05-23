@@ -13,6 +13,8 @@ permissions:
 jobs:
   unit-test:
     runs-on: ubuntu-latest
+    env:
+      CGO_ENABLED: 1
     steps:
       - uses: actions/checkout@v3
         with:
